@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de Demandas - Designer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --primary: #8a63d2;
+            --primary-light: #a88ae0;
+            --secondary: #63d2a5;
+            --text: #333333;
+            --text-light: #666666;
+            --border: #e1e5eb;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            --completed-bg: #f1f8e9;
+            --completed-border: #c5e1a5;
+            --clickbait: #fff3e0;
+            --clickbait-border: #ff9800;
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 32px;
+            --border-radius: 12px;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text);
+            line-height: 1.6;
+            padding: var(--spacing-sm);
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+
+        header {
+            text-align: center;
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: var(--spacing-xs);
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .time-display {
+            font-size: 1.4rem;
+            margin-top: var(--spacing-sm);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .btn-header {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+        }
+
+        .btn-header:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--spacing-lg);
+        }
+
+        @media (min-width: 992px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-md);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            margin-bottom: var(--spacing-md);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: var(--spacing-sm);
+            border: 2px solid var(--border);
+            border-radius: var(--border-radius);
+            font-family: var(--font-family);
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+        }
+
+        .btn:hover {
+            background-color: var(--primary-light);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: #52c191;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        .demand-list, .client-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .demand-item {
+            padding: var(--spacing-sm);
+            border-radius: var(--border-radius);
+            border-left: 5px solid var(--primary);
+            background-color: var(--card-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            cursor: move;
+        }
+
+        .demand-item:hover {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        .demand-item.clickbait {
+            background-color: var(--clickbait);
+            border-left-color: var(--clickbait-border);
+        }
+
+        .demand-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .demand-info p {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+
+        .demand-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .checkbox {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: color 0.3s;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .delete-btn:hover {
+            color: #ff3b3b;
+            background-color: rgba(255, 107, 107, 0.1);
+        }
+
+        .priority {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .priority-high {
+            background-color: #ffebee;
+            color: #d32f2f;
+        }
+
+        .priority-medium {
+            background-color: #fff8e1;
+            color: #ff8f00;
+        }
+
+        .priority-low {
+            background-color: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .client-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background-color: #e3f2fd;
+            color: #1565c0;
+            margin-right: 6px;
+            margin-top: 4px;
+        }
+
+        .duration-time {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .clickbait-info {
+            background-color: #fff3e0;
+            padding: var(--spacing-sm);
+            border-radius: var(--border-radius);
+            margin-bottom: var(--spacing-md);
+            border-left: 4px solid #ff9800;
+            font-size: 0.9rem;
+        }
+
+        .clickbait-info i {
+            color: #ff9800;
+            margin-right: var(--spacing-xs);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .floating-btn {
+            position: fixed;
+            bottom: var(--spacing-lg);
+            right: var(--spacing-lg);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .floating-btn:hover {
+            background-color: var(--primary-light);
+            transform: scale(1.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: var(--spacing-sm);
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-lg);
+            width: 100%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        .close-modal:hover {
+            color: var(--text);
+        }
+
+        .client-form {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: var(--spacing-sm);
+            align-items: end;
+            margin-bottom: var(--spacing-md);
+        }
+
+        @media (max-width: 768px) {
+            .client-form {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .client-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm);
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .client-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .client-name {
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .client-priority {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .client-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .completed-section {
+            margin-top: var(--spacing-lg);
+        }
+
+        .completed-title {
+            font-size: 1.2rem;
+            color: var(--secondary);
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .completed-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .completed-item {
+            padding: var(--spacing-sm);
+            border-radius: var(--border-radius);
+            border-left: 5px solid var(--secondary);
+            background-color: var(--completed-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        footer {
+            text-align: center;
+            padding: var(--spacing-md);
+            color: var(--text-light);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+            margin-top: var(--spacing-lg);
+        }
+
+        .instructions {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: var(--spacing-sm);
+            line-height: 1.5;
+        }
+
+        .drag-instruction {
+            font-size: 0.85rem;
+            color: var(--primary);
+            margin-top: var(--spacing-xs);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-light);
+            padding: var(--spacing-lg);
+            font-style: italic;
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .client-count {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.9rem;
+            margin-left: 6px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .stat-card {
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: var(--spacing-sm);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-palette"></i> Agenda de Demandas</h1>
+            <p class="subtitle">Organize suas tarefas automaticamente por cliente, prioridade e tempo</p>
+            
+            <div class="time-display">
+                <i class="far fa-clock"></i>
+                <span id="current-time">Carregando...</span>
+            </div>
+            
+            <div class="header-controls">
+                <button class="btn-header" id="open-demand-modal">
+                    <i class="fas fa-plus-circle"></i> Nova Demanda
+                </button>
+                <button class="btn-header" id="open-clients-modal">
+                    <i class="fas fa-users"></i> Gerenciar Clientes <span id="client-count" class="client-count">0</span>
+                </button>
+                <button class="btn-header" id="add-clickbait-btn">
+                    <i class="fas fa-bolt"></i> Adicionar Clickbait
+                </button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-tasks"></i> Agenda do Dia</h2>
+                <p class="instructions">Organize suas demandas arrastando e soltando. Clique na caixa para marcar como concluída.</p>
+                <p class="drag-instruction"><i class="fas fa-arrows-alt"></i> Arraste os itens para reorganizar</p>
+                
+                <div class="clickbait-info">
+                    <p><i class="fas fa-info-circle"></i> <strong>Sistema Automático:</strong> A cada 2 demandas normais, uma demanda de clickbait é criada automaticamente.</p>
+                </div>
+                
+                <div class="demand-list" id="demands-list">
+                    <!-- As demandas serão inseridas aqui -->
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-tasks">0</div>
+                        <div class="stat-label">Total de Tarefas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="pending-tasks">0</div>
+                        <div class="stat-label">Pendentes</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-time">0h</div>
+                        <div class="stat-label">Tempo Total</div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-secondary" id="organize-btn">
+                        <i class="fas fa-sort-amount-down"></i> Organizar Automaticamente
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-chart-bar"></i> Visão Geral</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="clients-count">0</div>
+                        <div class="stat-label">Clientes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="normal-demands-count">0</div>
+                        <div class="stat-label">Demandas Normais</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="clickbait-count">0</div>
+                        <div class="stat-label">Clickbaits</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="completed-count">0</div>
+                        <div class="stat-label">Concluídas</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: var(--spacing-md);">
+                    <h3 style="font-size: 1.1rem; margin-bottom: var(--spacing-sm); color: var(--primary);">
+                        <i class="fas fa-clock"></i> Próximos Horários
+                    </h3>
+                    <div id="next-schedule">
+                        <!-- Próximos horários serão inseridos aqui -->
+                    </div>
+                </div>
+                
+                <div style="margin-top: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid var(--border);">
+                    <h3 style="font-size: 1.1rem; margin-bottom: var(--spacing-sm); color: var(--primary);">
+                        <i class="fas fa-lightbulb"></i> Dicas
+                    </h3>
+                    <ul style="padding-left: var(--spacing-md); color: var(--text-light); font-size: 0.9rem;">
+                        <li style="margin-bottom: 6px;">Organize as demandas por arrastar e soltar</li>
+                        <li style="margin-bottom: 6px;">Clickbaits são criados automaticamente a cada 2 demandas</li>
+                        <li style="margin-bottom: 6px;">Adicione clientes para melhor organização</li>
+                        <li>Os dados são salvos automaticamente</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="completed-section">
+            <h2 class="completed-title"><i class="fas fa-check-circle"></i> Tarefas Concluídas</h2>
+            <div class="completed-list" id="completed-list">
+                <!-- Tarefas concluídas serão inseridas aqui -->
+            </div>
+        </div>
+        
+        <footer>
+            <p>Agenda de Demandas para Designers &copy; <span id="current-year"></span> | Os dados são salvos automaticamente no seu navegador</p>
+        </footer>
+    </div>
+    
+    <!-- Modal para adicionar nova demanda -->
+    <div class="modal" id="demand-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-plus-circle"></i> Nova Demanda</h2>
+                <button class="close-modal" id="close-demand-modal">&times;</button>
+            </div>
+            
+            <form id="demand-form">
+                <div class="form-group">
+                    <label for="demand-title">Título da Demanda</label>
+                    <input type="text" id="demand-title" placeholder="Ex: Criar layout para landing page" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="demand-client">Cliente</label>
+                    <select id="demand-client" required>
+                        <!-- Clientes serão carregados aqui em ordem alfabética -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <div style="display: flex; gap: var(--spacing-sm);">
+                        <div style="flex: 1;">
+                            <label for="demand-duration">Duração (minutos)</label>
+                            <input type="number" id="demand-duration" min="5" max="480" value="30" required>
+                        </div>
+                        <div style="flex: 1;">
+                            <label>Horário de Término</label>
+                            <div id="end-time" style="padding: var(--spacing-sm); background-color: #f5f5f5; border-radius: var(--border-radius); text-align: center; font-weight: 600;">
+                                Calculando...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="demand-priority">Prioridade da Tarefa</label>
+                    <select id="demand-priority">
+                        <option value="high">Alta</option>
+                        <option value="medium" selected>Média</option>
+                        <option value="low">Baixa</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="demand-description">Descrição (opcional)</label>
+                    <textarea id="demand-description" rows="3" placeholder="Detalhes da demanda..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn">
+                    <i class="fas fa-plus"></i> Adicionar Demanda
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal para gerenciar clientes -->
+    <div class="modal" id="clients-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-users"></i> Gerenciar Clientes</h2>
+                <button class="close-modal" id="close-clients-modal">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <h3 style="font-size: 1.2rem; margin-bottom: var(--spacing-sm); color: var(--primary);">
+                    <i class="fas fa-user-plus"></i> Adicionar Novo Cliente
+                </h3>
+                
+                <div class="client-form">
+                    <div>
+                        <label for="client-name">Nome do Cliente</label>
+                        <input type="text" id="client-name" placeholder="Ex: Cliente ABC">
+                    </div>
+                    
+                    <div>
+                        <label for="client-priority">Prioridade</label>
+                        <select id="client-priority">
+                            <option value="1">Muito Alta</option>
+                            <option value="2">Alta</option>
+                            <option value="3" selected>Média</option>
+                            <option value="4">Baixa</option>
+                            <option value="5">Muito Baixa</option>
+                        </select>
+                    </div>
+                    
+                    <button type="button" class="btn" id="add-client">
+                        <i class="fas fa-plus"></i> Adicionar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <h3 style="font-size: 1.2rem; margin-bottom: var(--spacing-sm); color: var(--primary);">
+                    <i class="fas fa-list"></i> Lista de Clientes
+                </h3>
+                
+                <div class="client-list" id="clients-list">
+                    <!-- Lista de clientes será inserida aqui -->
+                </div>
+            </div>
+            
+            <div class="clickbait-info">
+                <p><i class="fas fa-info-circle"></i> <strong>Prioridade do cliente:</strong> As demandas são organizadas primeiro pela prioridade do cliente (1 = mais alta, 5 = mais baixa).</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botão flutuante para abrir modal de demanda -->
+    <button class="floating-btn" id="floating-add-btn">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <script>
+        // Elementos DOM
+        const currentTimeEl = document.getElementById('current-time');
+        const demandsListEl = document.getElementById('demands-list');
+        const completedListEl = document.getElementById('completed-list');
+        const clientsListEl = document.getElementById('clients-list');
+        const totalTasksEl = document.getElementById('total-tasks');
+        const pendingTasksEl = document.getElementById('pending-tasks');
+        const totalTimeEl = document.getElementById('total-time');
+        const clientCountEl = document.getElementById('client-count');
+        const clientsCountEl = document.getElementById('clients-count');
+        const normalDemandsCountEl = document.getElementById('normal-demands-count');
+        const clickbaitCountEl = document.getElementById('clickbait-count');
+        const completedCountEl = document.getElementById('completed-count');
+        const nextScheduleEl = document.getElementById('next-schedule');
+        
+        // Botões
+        const openDemandModalBtn = document.getElementById('open-demand-modal');
+        const openClientsModalBtn = document.getElementById('open-clients-modal');
+        const addClickbaitBtn = document.getElementById('add-clickbait-btn');
+        const closeDemandModalBtn = document.getElementById('close-demand-modal');
+        const closeClientsModalBtn = document.getElementById('close-clients-modal');
+        const floatingAddBtn = document.getElementById('floating-add-btn');
+        
+        // Modais
+        const demandModal = document.getElementById('demand-modal');
+        const clientsModal = document.getElementById('clients-modal');
+        
+        // Formulários
+        const demandForm = document.getElementById('demand-form');
+        const demandClientSelect = document.getElementById('demand-client');
+        const endTimeEl = document.getElementById('end-time');
+        const demandDurationEl = document.getElementById('demand-duration');
+        
+        // Gerenciamento de clientes
+        const addClientBtn = document.getElementById('add-client');
+        const clientNameInput = document.getElementById('client-name');
+        const clientPrioritySelect = document.getElementById('client-priority');
+        
+        // Outros botões
+        const organizeBtn = document.getElementById('organize-btn');
+        
+        // Atualizar ano atual no footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        
+        // Atualizar horário atual em tempo real
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const dateString = now.toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+            });
+            
+            currentTimeEl.textContent = `${dateString} - ${timeString}`;
+        }
+        
+        // Atualizar a cada segundo
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000);
+        
+        // Calcular horário de término
+        function calculateEndTime(minutes) {
+            const now = new Date();
+            const endTime = new Date(now.getTime() + minutes * 60000);
+            return endTime.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Inicializar arrays
+        let demands = [];
+        let clients = [];
+        
+        // Carregar dados do localStorage
+        function loadData() {
+            const savedDemands = localStorage.getItem('designer-demands');
+            const savedClients = localStorage.getItem('designer-clients');
+            
+            if (savedDemands) {
+                demands = JSON.parse(savedDemands);
+            }
+            
+            if (savedClients) {
+                clients = JSON.parse(savedClients);
+            } else {
+                // Adicionar clientes padrão
+                clients = [
+                    { id: 1, name: "Cliente VIP", priority: 1 },
+                    { id: 2, name: "Cliente Corporativo", priority: 2 },
+                    { id: 3, name: "Cliente Regular", priority: 3 }
+                ];
+            }
+            
+            // Organizar clientes em ordem alfabética
+            sortClientsAlphabetically();
+            
+            // Renderizar tudo
+            renderDemands();
+            renderClients();
+            updateAllStats();
+            updateNextSchedule();
+        }
+        
+        // Salvar dados no localStorage
+        function saveData() {
+            localStorage.setItem('designer-demands', JSON.stringify(demands));
+            localStorage.setItem('designer-clients', JSON.stringify(clients));
+        }
+        
+        // Gerar ID único
+        function generateId() {
+            return Date.now() + Math.floor(Math.random() * 1000);
+        }
+        
+        // Ordenar clientes em ordem alfabética
+        function sortClientsAlphabetically() {
+            clients.sort((a, b) => {
+                const nameA = a.name.toUpperCase();
+                const nameB = b.name.toUpperCase();
+                if (nameA < nameB) return -1;
+                if (nameA > nameB) return 1;
+                return 0;
+            });
+        }
+        
+        // Adicionar cliente
+        function addClient(name, priority) {
+            const newClient = {
+                id: generateId(),
+                name: name,
+                priority: parseInt(priority)
+            };
+            
+            clients.push(newClient);
+            sortClientsAlphabetically();
+            saveData();
+            renderClients();
+            updateAllStats();
+            
+            // Feedback visual
+            const originalText = addClientBtn.innerHTML;
+            addClientBtn.innerHTML = '<i class="fas fa-check"></i> Adicionado!';
+            
+            setTimeout(() => {
+                addClientBtn.innerHTML = originalText;
+            }, 1500);
+            
+            // Limpar campo
+            clientNameInput.value = '';
+        }
+        
+        // Remover cliente
+        function removeClient(id) {
+            if (confirm("Tem certeza que deseja remover este cliente? As demandas associadas permanecerão.")) {
+                clients = clients.filter(c => c.id !== id);
+                sortClientsAlphabetically();
+                saveData();
+                renderClients();
+                updateAllStats();
+            }
+        }
+        
+        // Renderizar lista de clientes
+        function renderClients() {
+            clientsListEl.innerHTML = '';
+            demandClientSelect.innerHTML = '<option value="">Selecione um cliente</option>';
+            
+            if (clients.length === 0) {
+                clientsListEl.innerHTML = '<div class="empty-state">Nenhum cliente adicionado ainda.</div>';
+            } else {
+                clients.forEach(client => {
+                    // Adicionar à lista de clientes no modal
+                    const clientEl = document.createElement('div');
+                    clientEl.className = 'client-item';
+                    
+                    const priorityText = getPriorityText(client.priority);
+                    
+                    clientEl.innerHTML = `
+                        <div class="client-info">
+                            <div class="client-name">${client.name}</div>
+                            <div class="client-priority">Prioridade: ${priorityText}</div>
+                        </div>
+                        <div class="client-actions">
+                            <button class="delete-btn" data-client-id="${client.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    
+                    clientsListEl.appendChild(clientEl);
+                    
+                    // Adicionar ao select do modal de demanda
+                    const option = document.createElement('option');
+                    option.value = client.id;
+                    option.textContent = `${client.name} (${priorityText})`;
+                    demandClientSelect.appendChild(option);
+                });
+                
+                // Adicionar eventos aos botões de deletar cliente
+                document.querySelectorAll('[data-client-id]').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const clientId = parseInt(this.getAttribute('data-client-id'));
+                        removeClient(clientId);
+                    });
+                });
+            }
+        }
+        
+        // Obter texto da prioridade
+        function getPriorityText(priority) {
+            return priority === 1 ? 'Muito Alta' : 
+                   priority === 2 ? 'Alta' : 
+                   priority === 3 ? 'Média' : 
+                   priority === 4 ? 'Baixa' : 'Muito Baixa';
+        }
+        
+        // Criar demanda de clickbait
+        function createClickbaitDemand() {
+            const durations = [15, 20, 25, 30];
+            const randomDuration = durations[Math.floor(Math.random() * durations.length)];
+            
+            return {
+                id: generateId(),
+                title: "10 clickbaits", // Nome fixo para a tarefa
+                duration: randomDuration,
+                priority: "medium",
+                description: "", // Sem descrição conforme solicitado
+                completed: false,
+                createdAt: new Date().toISOString(),
+                isClickbait: true,
+                clientId: null,
+                order: demands.filter(d => !d.completed).length
+            };
+        }
+        
+        // Adicionar demanda de clickbait manualmente
+        function addClickbaitManually() {
+            const clickbaitDemand = createClickbaitDemand();
+            demands.push(clickbaitDemand);
+            
+            // Organizar automaticamente
+            organizeDemands();
+            
+            saveData();
+            renderDemands();
+            updateAllStats();
+            
+            // Feedback visual
+            const originalText = addClickbaitBtn.innerHTML;
+            addClickbaitBtn.innerHTML = '<i class="fas fa-check"></i> Adicionado!';
+            
+            setTimeout(() => {
+                addClickbaitBtn.innerHTML = originalText;
+            }, 1500);
+        }
+        
+        // Verificar se precisa adicionar clickbait (a cada 2 demandas normais)
+        function checkAndAddClickbait() {
+            const normalDemandsCount = demands.filter(d => !d.completed && !d.isClickbait).length;
+            
+            // Se temos um número par de demandas normais (2, 4, 6, etc), adiciona um clickbait
+            if (normalDemandsCount > 0 && normalDemandsCount % 2 === 0) {
+                const clickbaitDemand = createClickbaitDemand();
+                demands.push(clickbaitDemand);
+                return true;
+            }
+            return false;
+        }
+        
+        // Adicionar nova demanda
+        function addDemand(title, duration, priority, description, clientId) {
+            const newDemand = {
+                id: generateId(),
+                title: title,
+                duration: parseInt(duration),
+                priority: priority,
+                description: description,
+                completed: false,
+                createdAt: new Date().toISOString(),
+                isClickbait: false,
+                clientId: clientId ? parseInt(clientId) : null,
+                order: demands.filter(d => !d.completed).length
+            };
+            
+            demands.push(newDemand);
+            
+            // Verificar e adicionar clickbait se necessário
+            checkAndAddClickbait();
+            
+            // Organizar automaticamente
+            organizeDemands();
+            
+            saveData();
+            renderDemands();
+            updateAllStats();
+            updateNextSchedule();
+        }
+        
+        // Organizar demandas automaticamente (por cliente, prioridade e tempo)
+        function organizeDemands() {
+            // Separar demandas pendentes e concluídas
+            const pendingDemands = demands.filter(d => !d.completed);
+            const completedDemands = demands.filter(d => d.completed);
+            
+            // Separar clickbaits das demandas normais
+            const normalDemands = pendingDemands.filter(d => !d.isClickbait);
+            const clickbaitDemands = pendingDemands.filter(d => d.isClickbait);
+            
+            // Organizar demandas normais primeiro
+            normalDemands.sort((a, b) => {
+                // 1. Prioridade do cliente
+                const clientA = clients.find(c => c.id === a.clientId);
+                const clientB = clients.find(c => c.id === b.clientId);
+                
+                // Se ambos têm clientes, comparar prioridade
+                if (clientA && clientB && clientA.priority !== clientB.priority) {
+                    return clientA.priority - clientB.priority;
+                }
+                
+                // Se apenas um tem cliente, dar prioridade ao que tem cliente
+                if (clientA && !clientB) return -1;
+                if (!clientA && clientB) return 1;
+                
+                // 2. Prioridade da tarefa
+                const priorityOrder = { high: 1, medium: 2, low: 3 };
+                if (a.priority !== b.priority) {
+                    return priorityOrder[a.priority] - priorityOrder[b.priority];
+                }
+                
+                // 3. Duração (menor primeiro)
+                return a.duration - b.duration;
+            });
+            
+            // Intercalar clickbaits a cada 2 demandas normais
+            const organizedDemands = [];
+            let normalIndex = 0;
+            let clickbaitIndex = 0;
+            
+            while (normalIndex < normalDemands.length || clickbaitIndex < clickbaitDemands.length) {
+                // Adicionar até 2 demandas normais
+                for (let i = 0; i < 2 && normalIndex < normalDemands.length; i++) {
+                    organizedDemands.push(normalDemands[normalIndex]);
+                    normalIndex++;
+                }
+                
+                // Adicionar 1 clickbait se houver
+                if (clickbaitIndex < clickbaitDemands.length) {
+                    organizedDemands.push(clickbaitDemands[clickbaitIndex]);
+                    clickbaitIndex++;
+                }
+            }
+            
+            // Atualizar ordens
+            organizedDemands.forEach((demand, index) => {
+                demand.order = index;
+            });
+            
+            // Juntar tudo
+            demands = [...organizedDemands, ...completedDemands];
+        }
+        
+        // Renderizar lista de demandas
+        function renderDemands() {
+            demandsListEl.innerHTML = '';
+            completedListEl.innerHTML = '';
+            
+            // Separar demandas pendentes e concluídas
+            const pendingDemands = demands.filter(d => !d.completed);
+            const completedDemands = demands.filter(d => d.completed);
+            
+            // Ordenar pendentes pela ordem
+            pendingDemands.sort((a, b) => a.order - b.order);
+            
+            if (pendingDemands.length === 0) {
+                demandsListEl.innerHTML = '<div class="empty-state">Nenhuma demanda pendente. Adicione uma nova!</div>';
+            } else {
+                pendingDemands.forEach(demand => {
+                    createDemandElement(demand, demandsListEl, false);
+                });
+            }
+            
+            if (completedDemands.length === 0) {
+                completedListEl.innerHTML = '<div class="empty-state">Nenhuma tarefa concluída ainda.</div>';
+            } else {
+                // Ordenar concluídas por data de conclusão (mais recentes primeiro)
+                completedDemands.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+                
+                completedDemands.forEach(demand => {
+                    createDemandElement(demand, completedListEl, true);
+                });
+            }
+            
+            // Configurar drag and drop
+            setupDragAndDrop();
+        }
+        
+        // Criar elemento de demanda
+        function createDemandElement(demand, container, isCompleted) {
+            const demandEl = document.createElement('div');
+            demandEl.className = `demand-item ${demand.isClickbait ? 'clickbait' : ''}`;
+            demandEl.setAttribute('data-id', demand.id);
+            demandEl.draggable = !isCompleted;
+            
+            if (isCompleted) {
+                demandEl.classList.add('completed');
+            }
+            
+            const client = clients.find(c => c.id === demand.clientId);
+            const clientName = client ? client.name : 'Sem cliente';
+            
+            const priorityClass = `priority priority-${demand.priority}`;
+            const priorityText = demand.priority === 'high' ? 'Alta' : demand.priority === 'medium' ? 'Média' : 'Baixa';
+            
+            // Calcular horário de término
+            const endTime = calculateEndTime(demand.duration);
+            
+            demandEl.innerHTML = `
+                <div class="demand-info">
+                    <h3>${demand.title} ${demand.isClickbait ? '<i class="fas fa-bolt" style="color: #ff9800; font-size: 0.9rem;"></i>' : ''}</h3>
+                    <p>${demand.description || 'Sem descrição'}</p>
+                    <div>
+                        <span class="client-tag">${clientName}</span>
+                        <span class="${priorityClass}">${priorityText}</span>
+                    </div>
+                    <div class="duration-time">
+                        <i class="far fa-clock"></i> ${demand.duration} min • Término: ${endTime}
+                    </div>
+                </div>
+                <div class="demand-actions">
+                    ${!isCompleted ? `
+                        <input type="checkbox" class="checkbox" data-id="${demand.id}">
+                        <button class="delete-btn" data-id="${demand.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    ` : `
+                        <span style="color: var(--secondary); font-weight: 600;">
+                            <i class="fas fa-check-circle"></i> Concluída
+                        </span>
+                    `}
+                </div>
+            `;
+            
+            container.appendChild(demandEl);
+            
+            // Adicionar eventos se não for concluída
+            if (!isCompleted) {
+                const checkbox = demandEl.querySelector('.checkbox');
+                const deleteBtn = demandEl.querySelector('.delete-btn');
+                
+                checkbox.addEventListener('change', function() {
+                    completeDemand(demand.id);
+                });
+                
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    deleteDemand(demand.id);
+                });
+            }
+        }
+        
+        // Configurar drag and drop
+        function setupDragAndDrop() {
+            const draggables = document.querySelectorAll('.demand-item:not(.completed)');
+            
+            draggables.forEach(draggable => {
+                draggable.addEventListener('dragstart', handleDragStart);
+                draggable.addEventListener('dragover', handleDragOver);
+                draggable.addEventListener('dragenter', handleDragEnter);
+                draggable.addEventListener('dragleave', handleDragLeave);
+                draggable.addEventListener('drop', handleDrop);
+                draggable.addEventListener('dragend', handleDragEnd);
+            });
+        }
+        
+        function handleDragStart(e) {
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.getAttribute('data-id'));
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+        
+        function handleDragEnter(e) {
+            this.classList.add('drop-zone');
+        }
+        
+        function handleDragLeave(e) {
+            this.classList.remove('drop-zone');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drop-zone');
+            
+            const draggedId = e.dataTransfer.getData('text/plain');
+            const draggedEl = document.querySelector(`[data-id="${draggedId}"]`);
+            const dropEl = this;
+            
+            if (draggedEl !== dropEl) {
+                const demandsList = document.getElementById('demands-list');
+                const allItems = Array.from(demandsList.querySelectorAll('.demand-item'));
+                const draggedIndex = allItems.indexOf(draggedEl);
+                const dropIndex = allItems.indexOf(dropEl);
+                
+                if (draggedIndex < dropIndex) {
+                    demandsList.insertBefore(draggedEl, dropEl.nextSibling);
+                } else {
+                    demandsList.insertBefore(draggedEl, dropEl);
+                }
+                
+                // Atualizar ordens no array
+                updateDemandOrders();
+            }
+        }
+        
+        function handleDragEnd(e) {
+            document.querySelectorAll('.demand-item').forEach(item => {
+                item.classList.remove('dragging');
+                item.classList.remove('drop-zone');
+            });
+        }
+        
+        // Atualizar ordens das demandas após drag and drop
+        function updateDemandOrders() {
+            const demandsList = document.getElementById('demands-list');
+            const draggables = Array.from(demandsList.querySelectorAll('.demand-item'));
+            
+            draggables.forEach((item, index) => {
+                const demandId = parseInt(item.getAttribute('data-id'));
+                const demand = demands.find(d => d.id === demandId);
+                if (demand) {
+                    demand.order = index;
+                }
+            });
+            
+            saveData();
+        }
+        
+        // Concluir demanda
+        function completeDemand(id) {
+            const demand = demands.find(d => d.id === id);
+            if (demand) {
+                demand.completed = true;
+                demand.completedAt = new Date().toISOString();
+                saveData();
+                renderDemands();
+                updateAllStats();
+                updateNextSchedule();
+            }
+        }
+        
+        // Excluir demanda
+        function deleteDemand(id) {
+            if (confirm("Tem certeza que deseja excluir esta demanda?")) {
+                demands = demands.filter(d => d.id !== id);
+                saveData();
+                renderDemands();
+                updateAllStats();
+                updateNextSchedule();
+            }
+        }
+        
+        // Atualizar todas as estatísticas
+        function updateAllStats() {
+            const pendingDemands = demands.filter(d => !d.completed);
+            const completedDemands = demands.filter(d => d.completed);
+            const normalDemands = pendingDemands.filter(d => !d.isClickbait);
+            const clickbaitDemands = pendingDemands.filter(d => d.isClickbait);
+            
+            const totalTime = pendingDemands.reduce((sum, d) => sum + d.duration, 0);
+            const hours = Math.floor(totalTime / 60);
+            const minutes = totalTime % 60;
+            
+            // Estatísticas principais
+            totalTasksEl.textContent = pendingDemands.length;
+            pendingTasksEl.textContent = pendingDemands.length;
+            totalTimeEl.textContent = `${hours}h ${minutes}m`;
+            
+            // Estatísticas da visão geral
+            clientCountEl.textContent = clients.length;
+            clientsCountEl.textContent = clients.length;
+            normalDemandsCountEl.textContent = normalDemands.length;
+            clickbaitCountEl.textContent = clickbaitDemands.length;
+            completedCountEl.textContent = completedDemands.length;
+        }
+        
+        // Atualizar próximos horários
+        function updateNextSchedule() {
+            nextScheduleEl.innerHTML = '';
+            
+            const pendingDemands = demands.filter(d => !d.completed);
+            
+            if (pendingDemands.length === 0) {
+                nextScheduleEl.innerHTML = '<div class="empty-state">Nenhuma demanda agendada</div>';
+                return;
+            }
+            
+            // Ordenar por ordem
+            const sortedDemands = [...pendingDemands].sort((a, b) => a.order - b.order);
+            
+            // Mostrar apenas as próximas 3 demandas
+            const nextDemands = sortedDemands.slice(0, 3);
+            
+            nextDemands.forEach((demand, index) => {
+                const client = clients.find(c => c.id === demand.clientId);
+                const clientName = client ? client.name : 'Sem cliente';
+                const endTime = calculateEndTime(demand.duration);
+                
+                const scheduleItem = document.createElement('div');
+                scheduleItem.style.padding = '8px';
+                scheduleItem.style.borderBottom = '1px solid var(--border)';
+                scheduleItem.style.fontSize = '0.9rem';
+                
+                scheduleItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${index + 1}. ${demand.title.substring(0, 30)}${demand.title.length > 30 ? '...' : ''}</strong>
+                            <div style="color: var(--text-light); font-size: 0.85rem;">
+                                ${clientName} • ${demand.duration} min • ${endTime}
+                            </div>
+                        </div>
+                        ${demand.isClickbait ? '<i class="fas fa-bolt" style="color: #ff9800;"></i>' : ''}
+                    </div>
+                `;
+                
+                nextScheduleEl.appendChild(scheduleItem);
+            });
+            
+            if (sortedDemands.length > 3) {
+                const moreItem = document.createElement('div');
+                moreItem.style.padding = '8px';
+                moreItem.style.textAlign = 'center';
+                moreItem.style.color = 'var(--primary)';
+                moreItem.style.fontSize = '0.85rem';
+                moreItem.textContent = `+ ${sortedDemands.length - 3} mais...`;
+                nextScheduleEl.appendChild(moreItem);
+            }
+        }
+        
+        // Event Listeners para abrir/fechar modais
+        openDemandModalBtn.addEventListener('click', () => {
+            demandModal.style.display = 'flex';
+            // Atualizar horário de término
+            const duration = demandDurationEl.value || 30;
+            endTimeEl.textContent = calculateEndTime(duration);
+        });
+        
+        openClientsModalBtn.addEventListener('click', () => {
+            clientsModal.style.display = 'flex';
+        });
+        
+        floatingAddBtn.addEventListener('click', () => {
+            demandModal.style.display = 'flex';
+            // Atualizar horário de término
+            const duration = demandDurationEl.value || 30;
+            endTimeEl.textContent = calculateEndTime(duration);
+        });
+        
+        closeDemandModalBtn.addEventListener('click', () => {
+            demandModal.style.display = 'none';
+        });
+        
+        closeClientsModalBtn.addEventListener('click', () => {
+            clientsModal.style.display = 'none';
+        });
+        
+        // Fechar modais ao clicar fora
+        window.addEventListener('click', (e) => {
+            if (e.target === demandModal) {
+                demandModal.style.display = 'none';
+            }
+            if (e.target === clientsModal) {
+                clientsModal.style.display = 'none';
+            }
+        });
+        
+        // Formulário de demanda
+        demandForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('demand-title').value;
+            const duration = document.getElementById('demand-duration').value;
+            const priority = document.getElementById('demand-priority').value;
+            const description = document.getElementById('demand-description').value;
+            const clientId = document.getElementById('demand-client').value;
+            
+            if (!clientId) {
+                alert('Por favor, selecione um cliente.');
+                return;
+            }
+            
+            addDemand(title, duration, priority, description, clientId);
+            
+            // Resetar formulário e fechar modal
+            demandForm.reset();
+            document.getElementById('demand-duration').value = 30;
+            document.getElementById('demand-priority').value = 'medium';
+            demandModal.style.display = 'none';
+        });
+        
+        // Atualizar horário de término quando a duração mudar
+        demandDurationEl.addEventListener('input', function() {
+            const duration = this.value || 30;
+            endTimeEl.textContent = calculateEndTime(duration);
+        });
+        
+        // Adicionar cliente
+        addClientBtn.addEventListener('click', function() {
+            const name = clientNameInput.value;
+            const priority = clientPrioritySelect.value;
+            
+            if (!name) {
+                alert('Por favor, insira o nome do cliente.');
+                return;
+            }
+            
+            addClient(name, priority);
+        });
+        
+        // Organizar demandas automaticamente
+        organizeBtn.addEventListener('click', function() {
+            organizeDemands();
+            saveData();
+            renderDemands();
+            updateNextSchedule();
+            
+            // Feedback visual
+            const originalText = organizeBtn.innerHTML;
+            organizeBtn.innerHTML = '<i class="fas fa-check"></i> Organizado!';
+            organizeBtn.style.backgroundColor = '#63d2a5';
+            
+            setTimeout(() => {
+                organizeBtn.innerHTML = originalText;
+                organizeBtn.style.backgroundColor = '';
+            }, 1500);
+        });
+        
+        // Adicionar clickbait manualmente
+        addClickbaitBtn.addEventListener('click', function() {
+            addClickbaitManually();
+        });
+        
+        // Inicializar a aplicação
+        loadData();
+        
+        // Adicionar exemplos iniciais após carregamento
+        setTimeout(() => {
+            if (demands.length === 0 && clients.length > 0) {
+                // Adicionar exemplos iniciais
+                addDemand("Criar identidade visual", 60, "high", "Desenvolver logo, cores e tipografia", clients[0].id);
+                addDemand("Ajustar mockups para apresentação", 25, "medium", "Preparar arquivos para reunião", clients[1]?.id || clients[0].id);
+            }
+        }, 500);
+    </script>
+</body>
+</html>
