@@ -20,6 +20,8 @@
             --completed-border: #c5e1a5;
             --clickbait: #fff3e0;
             --clickbait-border: #ff9800;
+            --overdue: #ffebee;
+            --overdue-border: #d32f2f;
             --spacing-xs: 8px;
             --spacing-sm: 16px;
             --spacing-md: 24px;
@@ -224,9 +226,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             cursor: move;
+            position: relative;
         }
 
         .demand-item:hover {
@@ -236,6 +239,18 @@
         .demand-item.clickbait {
             background-color: var(--clickbait);
             border-left-color: var(--clickbait-border);
+        }
+
+        .demand-item.overdue {
+            background-color: var(--overdue);
+            border-left-color: var(--overdue-border);
+            animation: pulse 2s infinite;
+        }
+
+        .demand-item.dragging {
+            opacity: 0.5;
+            transform: rotate(3deg);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
 
         .demand-info h3 {
@@ -313,13 +328,31 @@
             margin-top: 4px;
         }
 
-        .duration-time {
+        .time-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
             font-size: 0.85rem;
             color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        .time-row {
             display: flex;
             align-items: center;
             gap: 4px;
-            margin-top: 4px;
+        }
+
+        .overdue-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background-color: #ffebee;
+            color: #d32f2f;
+            margin-left: 6px;
+            animation: blink 1.5s infinite;
         }
 
         .clickbait-info {
@@ -545,6 +578,36 @@
             font-style: italic;
         }
 
+        .time-preview {
+            font-size: 0.9rem;
+            margin-top: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background-color: #f5f5f5;
+            border-radius: var(--border-radius);
+            border-left: 3px solid var(--primary);
+        }
+
+        /* Animações */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(211, 47, 47, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .demand-item {
+            animation: slideUp 0.3s ease-out;
+        }
+
         /* Scrollbar personalizada */
         ::-webkit-scrollbar {
             width: 8px;
@@ -636,14 +699,17 @@
                         <div class="stat-label">Pendentes</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number" id="total-time">0h</div>
-                        <div class="stat-label">Tempo Total</div>
+                        <div class="stat-number" id="overdue-count">0</div>
+                        <div class="stat-label">Atrasadas</div>
                     </div>
                 </div>
                 
                 <div class="controls">
                     <button class="btn btn-secondary" id="organize-btn">
                         <i class="fas fa-sort-amount-down"></i> Organizar Automaticamente
+                    </button>
+                    <button class="btn" id="recalculate-times-btn">
+                        <i class="fas fa-calculator"></i> Recalcular Horários
                     </button>
                 </div>
             </div>
@@ -686,7 +752,7 @@
                     <ul style="padding-left: var(--spacing-md); color: var(--text-light); font-size: 0.9rem;">
                         <li style="margin-bottom: 6px;">Organize as demandas por arrastar e soltar</li>
                         <li style="margin-bottom: 6px;">Clickbaits são criados automaticamente a cada 2 demandas</li>
-                        <li style="margin-bottom: 6px;">Adicione clientes para melhor organização</li>
+                        <li style="margin-bottom: 6px;">Tarefas em atraso são destacadas em vermelho</li>
                         <li>Os dados são salvos automaticamente</li>
                     </ul>
                 </div>
@@ -732,12 +798,9 @@
                             <label for="demand-duration">Duração (minutos)</label>
                             <input type="number" id="demand-duration" min="5" max="480" value="30" required>
                         </div>
-                        <div style="flex: 1;">
-                            <label>Horário de Término</label>
-                            <div id="end-time" style="padding: var(--spacing-sm); background-color: #f5f5f5; border-radius: var(--border-radius); text-align: center; font-weight: 600;">
-                                Calculando...
-                            </div>
-                        </div>
+                    </div>
+                    <div id="time-preview" class="time-preview">
+                        Previsão: <span id="preview-start">--:--</span> até <span id="preview-end">--:--</span>
                     </div>
                 </div>
                 
@@ -827,7 +890,7 @@
         const clientsListEl = document.getElementById('clients-list');
         const totalTasksEl = document.getElementById('total-tasks');
         const pendingTasksEl = document.getElementById('pending-tasks');
-        const totalTimeEl = document.getElementById('total-time');
+        const overdueCountEl = document.getElementById('overdue-count');
         const clientCountEl = document.getElementById('client-count');
         const clientsCountEl = document.getElementById('clients-count');
         const normalDemandsCountEl = document.getElementById('normal-demands-count');
@@ -842,6 +905,7 @@
         const closeDemandModalBtn = document.getElementById('close-demand-modal');
         const closeClientsModalBtn = document.getElementById('close-clients-modal');
         const floatingAddBtn = document.getElementById('floating-add-btn');
+        const recalculateTimesBtn = document.getElementById('recalculate-times-btn');
         
         // Modais
         const demandModal = document.getElementById('demand-modal');
@@ -850,8 +914,12 @@
         // Formulários
         const demandForm = document.getElementById('demand-form');
         const demandClientSelect = document.getElementById('demand-client');
-        const endTimeEl = document.getElementById('end-time');
         const demandDurationEl = document.getElementById('demand-duration');
+        
+        // Pré-visualização de horário
+        const timePreviewEl = document.getElementById('time-preview');
+        const previewStartEl = document.getElementById('preview-start');
+        const previewEndEl = document.getElementById('preview-end');
         
         // Gerenciamento de clientes
         const addClientBtn = document.getElementById('add-client');
@@ -885,14 +953,65 @@
         updateCurrentTime();
         setInterval(updateCurrentTime, 1000);
         
-        // Calcular horário de término
-        function calculateEndTime(minutes) {
-            const now = new Date();
-            const endTime = new Date(now.getTime() + minutes * 60000);
-            return endTime.toLocaleTimeString('pt-BR', {
+        // Formatar horário
+        function formatTime(date) {
+            return date.toLocaleTimeString('pt-BR', {
                 hour: '2-digit',
                 minute: '2-digit'
             });
+        }
+        
+        // Calcular horário de término baseado na ordem
+        function calculateEndTimeBasedOnOrder(duration, order) {
+            const now = new Date();
+            const startTime = new Date(now);
+            
+            // Se não for a primeira tarefa, começar após a tarefa anterior
+            const pendingDemands = demands.filter(d => !d.completed).sort((a, b) => a.order - b.order);
+            
+            if (order > 0 && order < pendingDemands.length) {
+                // Começar quando a tarefa anterior terminar
+                const previousDemand = pendingDemands[order - 1];
+                if (previousDemand.scheduledEndTime) {
+                    startTime.setTime(new Date(previousDemand.scheduledEndTime).getTime());
+                }
+            } else {
+                // Primeira tarefa começa agora
+                startTime.setTime(now.getTime());
+            }
+            
+            const endTime = new Date(startTime.getTime() + duration * 60000);
+            
+            return {
+                startTime: startTime,
+                endTime: endTime
+            };
+        }
+        
+        // Atualizar pré-visualização de horário
+        function updateTimePreview() {
+            const duration = demandDurationEl.value || 30;
+            
+            // Calcular baseado na próxima posição disponível
+            const pendingDemands = demands.filter(d => !d.completed);
+            const order = pendingDemands.length;
+            
+            const times = calculateEndTimeBasedOnOrder(parseInt(duration), order);
+            
+            previewStartEl.textContent = formatTime(times.startTime);
+            previewEndEl.textContent = formatTime(times.endTime);
+            
+            // Destacar se passar do horário de trabalho (18:00)
+            const workEnd = new Date(times.startTime);
+            workEnd.setHours(18, 0, 0, 0);
+            
+            if (times.endTime > workEnd) {
+                timePreviewEl.style.borderLeftColor = '#d32f2f';
+                timePreviewEl.innerHTML = `Previsão: <span id="preview-start">${formatTime(times.startTime)}</span> até <span id="preview-end">${formatTime(times.endTime)}</span> <span style="color: #d32f2f; font-weight: 600;">(fora do horário)</span>`;
+            } else {
+                timePreviewEl.style.borderLeftColor = '';
+                timePreviewEl.innerHTML = `Previsão: <span id="preview-start">${formatTime(times.startTime)}</span> até <span id="preview-end">${formatTime(times.endTime)}</span>`;
+            }
         }
         
         // Inicializar arrays
@@ -906,6 +1025,16 @@
             
             if (savedDemands) {
                 demands = JSON.parse(savedDemands);
+                
+                // Converter strings de data para objetos Date
+                demands.forEach(demand => {
+                    if (demand.scheduledStartTime) {
+                        demand.scheduledStartTime = new Date(demand.scheduledStartTime);
+                    }
+                    if (demand.scheduledEndTime) {
+                        demand.scheduledEndTime = new Date(demand.scheduledEndTime);
+                    }
+                });
             }
             
             if (savedClients) {
@@ -921,6 +1050,9 @@
             
             // Organizar clientes em ordem alfabética
             sortClientsAlphabetically();
+            
+            // Recalcular horários das demandas
+            recalculateAllTimes();
             
             // Renderizar tudo
             renderDemands();
@@ -1049,10 +1181,10 @@
             
             return {
                 id: generateId(),
-                title: "10 clickbaits", // Nome fixo para a tarefa
+                title: "10 clickbaits",
                 duration: randomDuration,
                 priority: "medium",
-                description: "", // Sem descrição conforme solicitado
+                description: "",
                 completed: false,
                 createdAt: new Date().toISOString(),
                 isClickbait: true,
@@ -1066,8 +1198,8 @@
             const clickbaitDemand = createClickbaitDemand();
             demands.push(clickbaitDemand);
             
-            // Organizar automaticamente
-            organizeDemands();
+            // Recalcular horários
+            recalculateAllTimes();
             
             saveData();
             renderDemands();
@@ -1095,6 +1227,25 @@
             return false;
         }
         
+        // Recalcular todos os horários
+        function recalculateAllTimes() {
+            const pendingDemands = demands.filter(d => !d.completed).sort((a, b) => a.order - b.order);
+            let currentTime = new Date();
+            
+            pendingDemands.forEach((demand, index) => {
+                if (index === 0) {
+                    // Primeira tarefa começa agora
+                    demand.scheduledStartTime = new Date(currentTime);
+                } else {
+                    // Começar quando a tarefa anterior terminar
+                    const previousDemand = pendingDemands[index - 1];
+                    demand.scheduledStartTime = new Date(previousDemand.scheduledEndTime);
+                }
+                
+                demand.scheduledEndTime = new Date(demand.scheduledStartTime.getTime() + demand.duration * 60000);
+            });
+        }
+        
         // Adicionar nova demanda
         function addDemand(title, duration, priority, description, clientId) {
             const newDemand = {
@@ -1115,6 +1266,9 @@
             // Verificar e adicionar clickbait se necessário
             checkAndAddClickbait();
             
+            // Recalcular todos os horários
+            recalculateAllTimes();
+            
             // Organizar automaticamente
             organizeDemands();
             
@@ -1122,6 +1276,16 @@
             renderDemands();
             updateAllStats();
             updateNextSchedule();
+        }
+        
+        // Verificar se uma demanda está atrasada
+        function isDemandOverdue(demand) {
+            if (demand.completed || !demand.scheduledEndTime) return false;
+            
+            const now = new Date();
+            const endTime = new Date(demand.scheduledEndTime);
+            
+            return now > endTime;
         }
         
         // Organizar demandas automaticamente (por cliente, prioridade e tempo)
@@ -1183,6 +1347,9 @@
                 demand.order = index;
             });
             
+            // Recalcular horários
+            recalculateAllTimes();
+            
             // Juntar tudo
             demands = [...organizedDemands, ...completedDemands];
         }
@@ -1225,7 +1392,12 @@
         // Criar elemento de demanda
         function createDemandElement(demand, container, isCompleted) {
             const demandEl = document.createElement('div');
-            demandEl.className = `demand-item ${demand.isClickbait ? 'clickbait' : ''}`;
+            const isOverdue = isDemandOverdue(demand);
+            
+            let className = `demand-item ${demand.isClickbait ? 'clickbait' : ''}`;
+            if (isOverdue && !isCompleted) className += ' overdue';
+            
+            demandEl.className = className;
             demandEl.setAttribute('data-id', demand.id);
             demandEl.draggable = !isCompleted;
             
@@ -1239,19 +1411,33 @@
             const priorityClass = `priority priority-${demand.priority}`;
             const priorityText = demand.priority === 'high' ? 'Alta' : demand.priority === 'medium' ? 'Média' : 'Baixa';
             
-            // Calcular horário de término
-            const endTime = calculateEndTime(demand.duration);
+            // Formatando horários
+            let startTime = '--:--';
+            let endTime = '--:--';
+            
+            if (demand.scheduledStartTime && demand.scheduledEndTime) {
+                startTime = formatTime(new Date(demand.scheduledStartTime));
+                endTime = formatTime(new Date(demand.scheduledEndTime));
+            }
             
             demandEl.innerHTML = `
                 <div class="demand-info">
-                    <h3>${demand.title} ${demand.isClickbait ? '<i class="fas fa-bolt" style="color: #ff9800; font-size: 0.9rem;"></i>' : ''}</h3>
+                    <h3>${demand.title} ${demand.isClickbait ? '<i class="fas fa-bolt" style="color: #ff9800; font-size: 0.9rem;"></i>' : ''} ${isOverdue && !isCompleted ? '<span class="overdue-badge">ATRASADO</span>' : ''}</h3>
                     <p>${demand.description || 'Sem descrição'}</p>
                     <div>
                         <span class="client-tag">${clientName}</span>
                         <span class="${priorityClass}">${priorityText}</span>
                     </div>
-                    <div class="duration-time">
-                        <i class="far fa-clock"></i> ${demand.duration} min • Término: ${endTime}
+                    <div class="time-info">
+                        <div class="time-row">
+                            <i class="far fa-clock"></i> ${demand.duration} min
+                        </div>
+                        <div class="time-row">
+                            <i class="fas fa-play-circle"></i> Início: ${startTime}
+                        </div>
+                        <div class="time-row">
+                            <i class="fas fa-flag-checkered"></i> Término: ${endTime}
+                        </div>
                     </div>
                 </div>
                 <div class="demand-actions">
@@ -1289,65 +1475,62 @@
         // Configurar drag and drop
         function setupDragAndDrop() {
             const draggables = document.querySelectorAll('.demand-item:not(.completed)');
+            const demandsList = document.getElementById('demands-list');
+            
+            let draggedItem = null;
             
             draggables.forEach(draggable => {
-                draggable.addEventListener('dragstart', handleDragStart);
-                draggable.addEventListener('dragover', handleDragOver);
-                draggable.addEventListener('dragenter', handleDragEnter);
-                draggable.addEventListener('dragleave', handleDragLeave);
-                draggable.addEventListener('drop', handleDrop);
-                draggable.addEventListener('dragend', handleDragEnd);
-            });
-        }
-        
-        function handleDragStart(e) {
-            this.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', this.getAttribute('data-id'));
-        }
-        
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        }
-        
-        function handleDragEnter(e) {
-            this.classList.add('drop-zone');
-        }
-        
-        function handleDragLeave(e) {
-            this.classList.remove('drop-zone');
-        }
-        
-        function handleDrop(e) {
-            e.preventDefault();
-            this.classList.remove('drop-zone');
-            
-            const draggedId = e.dataTransfer.getData('text/plain');
-            const draggedEl = document.querySelector(`[data-id="${draggedId}"]`);
-            const dropEl = this;
-            
-            if (draggedEl !== dropEl) {
-                const demandsList = document.getElementById('demands-list');
-                const allItems = Array.from(demandsList.querySelectorAll('.demand-item'));
-                const draggedIndex = allItems.indexOf(draggedEl);
-                const dropIndex = allItems.indexOf(dropEl);
+                draggable.addEventListener('dragstart', function(e) {
+                    draggedItem = this;
+                    setTimeout(() => {
+                        this.classList.add('dragging');
+                    }, 0);
+                    
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', this.getAttribute('data-id'));
+                });
                 
-                if (draggedIndex < dropIndex) {
-                    demandsList.insertBefore(draggedEl, dropEl.nextSibling);
-                } else {
-                    demandsList.insertBefore(draggedEl, dropEl);
-                }
+                draggable.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                    draggedItem = null;
+                    
+                    // Atualizar ordens após o drop
+                    updateDemandOrders();
+                });
                 
-                // Atualizar ordens no array
-                updateDemandOrders();
-            }
-        }
-        
-        function handleDragEnd(e) {
-            document.querySelectorAll('.demand-item').forEach(item => {
-                item.classList.remove('dragging');
-                item.classList.remove('drop-zone');
+                draggable.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                });
+                
+                draggable.addEventListener('dragenter', function(e) {
+                    e.preventDefault();
+                    if (this !== draggedItem) {
+                        this.style.transform = 'translateY(10px)';
+                    }
+                });
+                
+                draggable.addEventListener('dragleave', function() {
+                    this.style.transform = '';
+                });
+                
+                draggable.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.style.transform = '';
+                    
+                    if (this !== draggedItem) {
+                        // Reordenar os elementos no DOM
+                        const allItems = Array.from(demandsList.querySelectorAll('.demand-item'));
+                        const draggedIndex = allItems.indexOf(draggedItem);
+                        const dropIndex = allItems.indexOf(this);
+                        
+                        if (draggedIndex < dropIndex) {
+                            demandsList.insertBefore(draggedItem, this.nextSibling);
+                        } else {
+                            demandsList.insertBefore(draggedItem, this);
+                        }
+                    }
+                });
             });
         }
         
@@ -1364,7 +1547,13 @@
                 }
             });
             
+            // Recalcular horários após reordenar
+            recalculateAllTimes();
+            
             saveData();
+            renderDemands();
+            updateAllStats();
+            updateNextSchedule();
         }
         
         // Concluir demanda
@@ -1373,6 +1562,10 @@
             if (demand) {
                 demand.completed = true;
                 demand.completedAt = new Date().toISOString();
+                
+                // Recalcular horários das tarefas restantes
+                recalculateAllTimes();
+                
                 saveData();
                 renderDemands();
                 updateAllStats();
@@ -1384,6 +1577,10 @@
         function deleteDemand(id) {
             if (confirm("Tem certeza que deseja excluir esta demanda?")) {
                 demands = demands.filter(d => d.id !== id);
+                
+                // Recalcular horários
+                recalculateAllTimes();
+                
                 saveData();
                 renderDemands();
                 updateAllStats();
@@ -1397,6 +1594,7 @@
             const completedDemands = demands.filter(d => d.completed);
             const normalDemands = pendingDemands.filter(d => !d.isClickbait);
             const clickbaitDemands = pendingDemands.filter(d => d.isClickbait);
+            const overdueDemands = pendingDemands.filter(d => isDemandOverdue(d));
             
             const totalTime = pendingDemands.reduce((sum, d) => sum + d.duration, 0);
             const hours = Math.floor(totalTime / 60);
@@ -1405,7 +1603,7 @@
             // Estatísticas principais
             totalTasksEl.textContent = pendingDemands.length;
             pendingTasksEl.textContent = pendingDemands.length;
-            totalTimeEl.textContent = `${hours}h ${minutes}m`;
+            overdueCountEl.textContent = overdueDemands.length;
             
             // Estatísticas da visão geral
             clientCountEl.textContent = clients.length;
@@ -1435,22 +1633,34 @@
             nextDemands.forEach((demand, index) => {
                 const client = clients.find(c => c.id === demand.clientId);
                 const clientName = client ? client.name : 'Sem cliente';
-                const endTime = calculateEndTime(demand.duration);
+                
+                let startTime = '--:--';
+                let endTime = '--:--';
+                
+                if (demand.scheduledStartTime && demand.scheduledEndTime) {
+                    startTime = formatTime(new Date(demand.scheduledStartTime));
+                    endTime = formatTime(new Date(demand.scheduledEndTime));
+                }
                 
                 const scheduleItem = document.createElement('div');
                 scheduleItem.style.padding = '8px';
                 scheduleItem.style.borderBottom = '1px solid var(--border)';
                 scheduleItem.style.fontSize = '0.9rem';
                 
+                const isOverdue = isDemandOverdue(demand);
+                
                 scheduleItem.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <strong>${index + 1}. ${demand.title.substring(0, 30)}${demand.title.length > 30 ? '...' : ''}</strong>
                             <div style="color: var(--text-light); font-size: 0.85rem;">
-                                ${clientName} • ${demand.duration} min • ${endTime}
+                                ${clientName} • ${demand.duration} min • ${startTime} - ${endTime}
                             </div>
                         </div>
-                        ${demand.isClickbait ? '<i class="fas fa-bolt" style="color: #ff9800;"></i>' : ''}
+                        <div>
+                            ${demand.isClickbait ? '<i class="fas fa-bolt" style="color: #ff9800;"></i>' : ''}
+                            ${isOverdue ? '<span style="color: #d32f2f; font-size: 0.7rem; font-weight: bold;">ATRASADO</span>' : ''}
+                        </div>
                     </div>
                 `;
                 
@@ -1471,9 +1681,8 @@
         // Event Listeners para abrir/fechar modais
         openDemandModalBtn.addEventListener('click', () => {
             demandModal.style.display = 'flex';
-            // Atualizar horário de término
-            const duration = demandDurationEl.value || 30;
-            endTimeEl.textContent = calculateEndTime(duration);
+            // Atualizar pré-visualização
+            updateTimePreview();
         });
         
         openClientsModalBtn.addEventListener('click', () => {
@@ -1482,9 +1691,8 @@
         
         floatingAddBtn.addEventListener('click', () => {
             demandModal.style.display = 'flex';
-            // Atualizar horário de término
-            const duration = demandDurationEl.value || 30;
-            endTimeEl.textContent = calculateEndTime(duration);
+            // Atualizar pré-visualização
+            updateTimePreview();
         });
         
         closeDemandModalBtn.addEventListener('click', () => {
@@ -1529,10 +1737,9 @@
             demandModal.style.display = 'none';
         });
         
-        // Atualizar horário de término quando a duração mudar
+        // Atualizar pré-visualização quando a duração mudar
         demandDurationEl.addEventListener('input', function() {
-            const duration = this.value || 30;
-            endTimeEl.textContent = calculateEndTime(duration);
+            updateTimePreview();
         });
         
         // Adicionar cliente
@@ -1566,6 +1773,25 @@
             }, 1500);
         });
         
+        // Recalcular horários
+        recalculateTimesBtn.addEventListener('click', function() {
+            recalculateAllTimes();
+            saveData();
+            renderDemands();
+            updateAllStats();
+            updateNextSchedule();
+            
+            // Feedback visual
+            const originalText = recalculateTimesBtn.innerHTML;
+            recalculateTimesBtn.innerHTML = '<i class="fas fa-check"></i> Recalculado!';
+            recalculateTimesBtn.style.backgroundColor = '#63d2a5';
+            
+            setTimeout(() => {
+                recalculateTimesBtn.innerHTML = originalText;
+                recalculateTimesBtn.style.backgroundColor = '';
+            }, 1500);
+        });
+        
         // Adicionar clickbait manualmente
         addClickbaitBtn.addEventListener('click', function() {
             addClickbaitManually();
@@ -1573,6 +1799,9 @@
         
         // Inicializar a aplicação
         loadData();
+        
+        // Atualizar pré-visualização inicial
+        updateTimePreview();
         
         // Adicionar exemplos iniciais após carregamento
         setTimeout(() => {
@@ -1582,6 +1811,37 @@
                 addDemand("Ajustar mockups para apresentação", 25, "medium", "Preparar arquivos para reunião", clients[1]?.id || clients[0].id);
             }
         }, 500);
+        
+        // Atualizar verificação de atrasos periodicamente
+        setInterval(() => {
+            const pendingDemands = demands.filter(d => !d.completed);
+            const hasOverdue = pendingDemands.some(d => isDemandOverdue(d));
+            
+            if (hasOverdue) {
+                // Atualizar apenas os itens que mudaram de estado
+                const overdueItems = document.querySelectorAll('.demand-item:not(.overdue)');
+                overdueItems.forEach(item => {
+                    const demandId = parseInt(item.getAttribute('data-id'));
+                    const demand = demands.find(d => d.id === demandId);
+                    if (demand && isDemandOverdue(demand)) {
+                        item.classList.add('overdue');
+                        
+                        // Adicionar badge de atrasado se não existir
+                        if (!item.querySelector('.overdue-badge')) {
+                            const titleEl = item.querySelector('h3');
+                            if (titleEl) {
+                                const badge = document.createElement('span');
+                                badge.className = 'overdue-badge';
+                                badge.textContent = 'ATRASADO';
+                                titleEl.appendChild(badge);
+                            }
+                        }
+                    }
+                });
+                
+                updateAllStats();
+            }
+        }, 30000); // Verificar a cada 30 segundos
     </script>
 </body>
 </html>
